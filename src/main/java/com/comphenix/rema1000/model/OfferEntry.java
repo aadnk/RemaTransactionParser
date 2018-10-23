@@ -59,6 +59,22 @@ public class OfferEntry {
         }
     }
 
+    public String getOfferCode() {
+        return offerCode;
+    }
+
+    public String getOfferDescription() {
+        return offerDescription;
+    }
+
+    public double getDiscountFlat() {
+        return discountFlat;
+    }
+
+    public double getDiscountPercent() {
+        return discountPercent;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -1,18 +1,12 @@
 package com.comphenix.rema1000.io;
 
-import com.comphenix.rema1000.beans.BeanMetadata;
 import com.comphenix.rema1000.model.*;
 import com.google.common.collect.ImmutableList;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -37,17 +31,86 @@ public class ExcelWriter extends DataWriter<DataRoot> {
     }
 
     @Override
-    public void write(Path output, DataRoot data) throws IOException {
+    public void write(OutputStream output, DataRoot data) throws IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
             WorkbookStyle workbookStyle = createWorkbookStyle(workbook);
+
+            writeTransactionsInfo(workbookStyle, workbook.createSheet("Info"), data.getTransactionsInfo());
+
             writeTopList(workbookStyle, workbook.createSheet("TopList"),
                     data.getTopList());
             writeTransactions(workbookStyle, workbook.createSheet("Transactions"),
                     data.getTransactionsInfo().getTransactionList());
+            writeTransactionsPayments(workbookStyle, workbook.createSheet("Transactions Payments"),
+                    data.getTransactionsInfo().getTransactionList());
+            writeTransactionUsedOffers(workbookStyle, workbook.createSheet("Used Offers"),
+                    data.getTransactionsInfo().getTransactionList());
 
-            try (OutputStream outputStream = Files.newOutputStream(output)) {
-                workbook.write(outputStream);
-            };
+            workbook.write(output);
+        }
+    }
+
+    private void writeTransactionsInfo(WorkbookStyle workbookStyle, Sheet info, TransactionsInfo transactionsInfo) {
+        writeInfoLine(workbookStyle, info, 0, "Bonus Total", transactionsInfo.getBonusTotal());
+        writeInfoLine(workbookStyle, info, 1, "Discount Total", transactionsInfo.getDiscountTotal());
+        writeInfoLine(workbookStyle, info, 2, "Purchase Total", transactionsInfo.getPurchaseTotal());
+    }
+
+    private void writeInfoLine(WorkbookStyle style, Sheet sheet, int rowIndex, String infoName, Object infoValue) {
+        Row row = sheet.createRow(rowIndex);
+        Cell headerCell = row.createCell(0);
+        headerCell.setCellStyle(style.getHeaderStyle());
+        headerCell.setCellValue(infoName);
+
+        ExcelCells.writeCell(style, row.createCell(1), infoValue, infoValue != null ? infoValue.getClass() : Object.class);
+    }
+
+    private void writeTransactionsPayments(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) {
+        if (transactionList == null || transactionList.isEmpty()) {
+            return;
+        }
+        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+
+        for (Transaction transaction : transactionList) {
+            // Skip empty receipts
+            if (transaction == null || transaction.getReceiptEntries() == null || transaction.getReceiptEntries().isEmpty()) {
+                continue;
+            }
+            for (TransactionPayment payment : transaction.getTransactionPayments()) {
+                writer.incrementRow();
+                writer.write("Transaction ID", transaction.getId());
+                writer.write("Means Of Payment Desc", payment.getMeansOfPaymentDesc(), String.class);
+                writer.write("Amount", payment.getAmount());
+            }
+        }
+    }
+
+    private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) {
+        if (transactionList == null || transactionList.isEmpty()) {
+            return;
+        }
+        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+
+        for (Transaction transaction : transactionList) {
+            // Skip empty receipts
+            if (transaction == null || transaction.getReceiptEntries() == null || transaction.getReceiptEntries().isEmpty()) {
+                continue;
+            }
+            for (ReceiptEntry receiptEntry : transaction.getReceiptEntries()) {
+                List<OfferEntry> usedOffers = receiptEntry.getUsedOffers();
+
+                if (usedOffers != null) {
+                    for (OfferEntry offerEntry : usedOffers) {
+                        writer.incrementRow();
+                        writer.write("Transaction ID", transaction.getId());
+                        writer.write("Receipt Entry ID", receiptEntry.getEntryId());
+                        writer.write("Offer Code", offerEntry.getOfferCode());
+                        writer.write("Offer Desc", offerEntry.getOfferDescription(), String.class);
+                        writer.write("Discount Flat", offerEntry.getDiscountFlat());
+                        writer.write("Discount Percent", offerEntry.getDiscountPercent());
+                    }
+                }
+            }
         }
     }
 
@@ -92,6 +155,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
             for (ReceiptEntry receiptEntry : transaction.getReceiptEntries()) {
                 writer.incrementRow();
                 writer.write("Transaction ID", transaction.getId());
+                writer.write("Receipt Entry ID", receiptEntry.getEntryId());
                 writer.write("Purchase Date", Instant.ofEpochSecond(transaction.getPurchaseDateUnix()));
                 writer.write("Store ID", transaction.getStoreId());
                 writer.write("Store Name", transaction.getStoreName());
@@ -108,7 +172,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
 
                 writer.write("Product Price", receiptEntry.getPriceAmount());
                 writer.write("Product Discount", receiptEntry.getPriceDiscount());
-                writer.write("Product Net Price", receiptEntry.getPriceAmount() - receiptEntry.getPriceDiscount());
+                writer.write("Product Net Price", receiptEntry.getPriceAmount() + receiptEntry.getPriceDiscount());
                 writer.write("Product Deposit", receiptEntry.getDeposit());
 
                 writer.write("Volume Amount", receiptEntry.getVolumeAmount());

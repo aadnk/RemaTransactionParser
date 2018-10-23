@@ -104,6 +104,7 @@ public class ExcelTableWriter {
 
             Cell headerCell = getHeaderRow().createCell(column, CellType.STRING);
             headerCell.setCellStyle(workbookStyle.getHeaderStyle());
+            headerCell.setCellValue(headerName);
 
             headerLookup.put(headerName, column);
             return column;
@@ -158,43 +159,7 @@ public class ExcelTableWriter {
     }
 
     private void writeCell(int headerIndex, Object value, Class<?> type) {
-        try {
-            Class<?> wrappedType = Primitives.wrap(type);
-
-            if (value == null) {
-                getDataRow().createCell(headerIndex, CellType.BLANK);
-                return;
-            }
-            // Unix time?
-            if (Instant.class.isAssignableFrom(type)) {
-                // Convert from milliseconds unix time
-                Cell cell = getDataRow().createCell(headerIndex, CellType.NUMERIC);
-                cell.setCellValue(((Instant) value).toEpochMilli());
-                cell.setCellStyle(workbookStyle.getDateStyle());
-
-            } else if (Date.class.equals(type)) {
-                Cell cell = getDataRow().createCell(headerIndex, CellType.NUMERIC);
-                cell.setCellValue((Date) value);
-                cell.setCellStyle(workbookStyle.getDateStyle());
-
-                // Fields representable as numbers
-            } else if (Number.class.isAssignableFrom(wrappedType)) {
-                Cell cell = getDataRow().createCell(headerIndex, CellType.NUMERIC);
-                cell.setCellValue(((Number) value).doubleValue());
-
-            } else if (CharSequence.class.isAssignableFrom(type)) {
-                Cell cell = getDataRow().createCell(headerIndex, CellType.STRING);
-                cell.setCellValue(value.toString());
-
-            } else if (Boolean.class.equals(wrappedType)) {
-                Cell cell = getDataRow().createCell(headerIndex, CellType.BOOLEAN);
-                cell.setCellValue((Boolean) value);
-            } else {
-                throw new IllegalArgumentException("Unknown property type " + type);
-            }
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Unable to write cell with value " + value + " (type " + type + ")", e);
-        }
+        ExcelCells.writeCell(workbookStyle, getDataRow().createCell(headerIndex), value, type);
     }
 
     private Row getHeaderRow() {

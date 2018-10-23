@@ -111,7 +111,6 @@ public class Transaction {
         return id;
     }
 
-    @ModelField(customType = BeanMetadata.CustomType.UNIX_TIME)
     public long getPurchaseDateUnix() {
         return purchaseDateUnix;
     }

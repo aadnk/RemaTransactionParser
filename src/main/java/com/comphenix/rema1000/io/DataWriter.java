@@ -11,5 +11,5 @@ public abstract class DataWriter<T> {
      * @param output the output stream.
      * @param data the data to write.
      */
-    public abstract void write(Path output, T data) throws IOException;
+    public abstract void write(OutputStream output, T data) throws IOException;
 }

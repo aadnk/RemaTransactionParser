@@ -168,77 +168,62 @@ public class ScorecardEntry {
         }
     }
 
-    @ModelField(order = 0)
     public int getRank() {
         return rank;
     }
 
-    @ModelField(order = 1)
     public String getProductId() {
         return productId;
     }
 
-    @ModelField(order = 2)
     public String getProductName() {
         return productName;
     }
 
-    @ModelField(order = 3)
     public String getProductDescription() {
         return productDescription;
     }
 
-    @ModelField(order = 4, customType = BeanMetadata.CustomType.UNIX_TIME)
     public long getCreatedTimeUnix() {
         return createdTimeUnix;
     }
 
-    @ModelField(order = 5, customType = BeanMetadata.CustomType.UNIX_TIME)
     public long getModifiedTimeUnix() {
         return modifiedTimeUnix;
     }
 
-    @ModelField(order = 6)
     public double getAmountUsed() {
         return amountUsed;
     }
 
-    @ModelField(order = 7)
     public double getAmountSaved() {
         return amountSaved;
     }
 
-    @ModelField(order = 8)
     public String getBarcode() {
         return barcode;
     }
 
-    @ModelField(order = 9)
     public int getTimesBought() {
         return timesBought;
     }
 
-    @ModelField(order = 10)
     public int getItemsBought() {
         return itemsBought;
     }
 
-    @ModelField(order = 11)
     public String getAccountId() {
         return accountId;
     }
 
-    @ModelField(order = 12)
     public String getProductGroupCode() {
         return productGroupCode;
     }
 
-    @ModelField(order = 13)
     public String getProductGroupDesc() {
         return productGroupDesc;
     }
 
-    @ModelField(order = 14)
     public double getVolume() {
         return volume;
     }
