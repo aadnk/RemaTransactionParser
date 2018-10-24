@@ -2,6 +2,7 @@ package com.comphenix.rema1000.io;
 
 import com.comphenix.rema1000.model.*;
 import com.google.common.collect.ImmutableList;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -10,8 +11,16 @@ import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public class ExcelWriter extends DataWriter<DataRoot> {
+    public enum Format {
+        XLSX,
+        XLS
+    }
+
+    private Format format;
+
     public static class WorkbookStyle {
         private CellStyle headerStyle;
         private CellStyle dateStyle;
@@ -30,9 +39,13 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         }
     }
 
+    public ExcelWriter(Format format) {
+        this.format = Objects.requireNonNull(format, "format cannot be NULL");
+    }
+
     @Override
     public void write(OutputStream output, DataRoot data) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook()) {
+        try (Workbook workbook = createWorkbook()) {
             WorkbookStyle workbookStyle = createWorkbookStyle(workbook);
 
             writeTransactionsInfo(workbookStyle, workbook.createSheet("Info"), data.getTransactionsInfo());
@@ -48,6 +61,10 @@ public class ExcelWriter extends DataWriter<DataRoot> {
 
             workbook.write(output);
         }
+    }
+
+    private Workbook createWorkbook() {
+        return format == Format.XLSX ? new XSSFWorkbook() : new HSSFWorkbook();
     }
 
     private void writeTransactionsInfo(WorkbookStyle workbookStyle, Sheet info, TransactionsInfo transactionsInfo) {
@@ -69,7 +86,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
 
         for (Transaction transaction : transactionList) {
             // Skip empty receipts
@@ -89,7 +106,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
 
         for (Transaction transaction : transactionList) {
             // Skip empty receipts
@@ -119,7 +136,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         ImmutableList<ScorecardEntry> entries = ImmutableList.sortedCopyOf(
                 Comparator.comparing(ScorecardEntry::getRank), metadata.getScorecard());
 
-        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
 
         for (ScorecardEntry entry : entries) {
             writer.incrementRow();
@@ -145,7 +162,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        ExcelTableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
+        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
 
         for (Transaction transaction : transactionList) {
             // Skip empty receipts

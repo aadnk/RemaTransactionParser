@@ -1,14 +1,13 @@
 package com.comphenix.rema1000.io;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.gson.internal.Primitives;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
-import java.time.Instant;
-import java.util.*;
+import java.util.Objects;
 
-public class ExcelTableWriter {
+public class ExcelTableWriter extends AbstractTableWriter {
     private final ExcelWriter.WorkbookStyle workbookStyle;
     private final Sheet sheet;
 
@@ -22,10 +21,6 @@ public class ExcelTableWriter {
 
     // Index of the current row (initially -1)
     private int dataIndex = -1;
-    // Index of the current column (initially -1)
-    private int columnIndex = -1;
-
-    private BiMap<String, Integer> headerLookup = HashBiMap.create();
 
     public ExcelTableWriter(ExcelWriter.WorkbookStyle workbookStyle, Sheet sheet) {
         this(workbookStyle, sheet, 0, 1);
@@ -44,121 +39,26 @@ public class ExcelTableWriter {
         this.dataOffset = dataOffset;
     }
 
+    @Override
     public void incrementRow() {
         this.dataRow = null;
         this.dataIndex++;
     }
 
-    /**
-     * Retrieve the index of the given header, if it exists.
-     * @param header the header name.
-     * @return Index of the header, or -1 if not found.
-     */
-    public int getHeaderIndex(String header) {
-        return headerLookup.getOrDefault(header, -1);
-    }
-
-    /**
-     * Retrieve the name of the header at the given index.
-     * @param index the index.
-     * @return The corresponding name.
-     */
-    public String getHeaderName(int index) {
-        return headerLookup.inverse().get(index);
-    }
-
-    /**
-     * Retrieve the number of headers in the table.
-     * @return Number of headers.
-     */
-    public int getHeaderCount() {
-        return columnIndex + 1;
-    }
-
-    /**
-     * Retrieve a set view of the current headers in the table.
-     * @return Unmodifiable view of the headers in the table.
-     */
-    public Set<String> headers() {
-        return Collections.unmodifiableSet(headerLookup.keySet());
-    }
-
-    /**
-     * Retrieve the number of data rows in the table.
-     * @return Number of data rows.
-     */
+    @Override
     public int getDataRowCount() {
         return dataIndex + 1;
     }
 
-    /**
-     * Create a new header with the given name
-     * @param headerName the header name.
-     * @return Index of the created or existing index.
-     */
-    public int createHeader(String headerName) {
-        Integer existing = headerLookup.get(headerName);
-
-        if (existing == null) {
-            int column = ++columnIndex;
-
-            Cell headerCell = getHeaderRow().createCell(column, CellType.STRING);
-            headerCell.setCellStyle(workbookStyle.getHeaderStyle());
-            headerCell.setCellValue(headerName);
-
-            headerLookup.put(headerName, column);
-            return column;
-        }
-        return existing;
+    @Override
+    protected void onHeaderCreated(String headerName, int headerIndex) {
+        Cell headerCell = getHeaderRow().createCell(headerIndex, CellType.STRING);
+        headerCell.setCellStyle(workbookStyle.getHeaderStyle());
+        headerCell.setCellValue(headerName);
     }
 
-    /**
-     * Write the given value to the column with the given header.
-     * @param headerName the header name.
-     * @param value the value.
-     */
-    public void write(String headerName, Object value) {
-        write(headerName, value, value != null ? value.getClass() : Object.class);
-    }
-
-    /**
-     * Write the given value to the column with the given header.
-     * @param headerName the header name.
-     * @param value the value.
-     * @param type the object type.
-     */
-    public void write(String headerName, Object value, Class<?> type) {
-        Objects.requireNonNull(type,"type cannot be NULL");
-        Objects.requireNonNull(headerName, "headerName cannot be NULL");
-
-        int headerIndex = createHeader(headerName);
-        writeCell(headerIndex, value, type);
-    }
-
-    /**
-     * Write the given value to the column with the given header.
-     * @param headerIndex the header index.
-     * @param value the value.
-     */
-    public void write(int headerIndex, Object value) {
-        write(headerIndex, value, value != null ? value.getClass() : Object.class);
-    }
-    /**
-     * Write the given value to the column with the given header.
-     * @param headerIndex the header index.
-     * @param value the value.
-     * @param type the object type.
-     */
-    public void write(int headerIndex, Object value, Class<?> type) {
-        Objects.requireNonNull(type,"type cannot be NULL");
-
-        if (headerIndex < 0 || headerIndex > columnIndex) {
-            throw new IllegalArgumentException("Illegal header index " + headerIndex);
-        }
-        writeCell(headerIndex, value, type);
-    }
-
-    private void writeCell(int headerIndex, Object value, Class<?> type) {
+    @Override
+    protected void onWriteValue(int headerIndex, Object value, Class<?> type) {
         ExcelCells.writeCell(workbookStyle, getDataRow().createCell(headerIndex), value, type);
     }
 

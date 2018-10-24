@@ -4,6 +4,7 @@ import com.comphenix.rema1000.io.ExcelWriter;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.ReceiptEntry;
 import com.comphenix.rema1000.model.Transaction;
+import com.google.common.io.MoreFiles;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -32,7 +33,7 @@ public class Application {
                     switch (arg) {
                         case "-f":
                         case "--format":
-                            format = DestinationFormat.valueOf(args[++i]);
+                            format = DestinationFormat.valueOf(args[++i].toUpperCase());
                             break;
                         case "-s":
                         case "-stream":
@@ -122,13 +123,28 @@ public class Application {
     }
 
     private static OutputStream getOutput(ArgumentParser parser) throws IOException {
-        return parser.getDestination() != null ? Files.newOutputStream(parser.getDestination()) : System.out;
+        String extension = parser.getFormat().getExtension();
+        Path outputFile = parser.getDestination();
+
+        if (extension != null && outputFile != null) {
+            @SuppressWarnings("UnstableApiUsage")
+            String fileExtension = MoreFiles.getFileExtension(outputFile);
+
+            // Error
+            if (!extension.equalsIgnoreCase(fileExtension)) {
+                throw new IllegalArgumentException("Extension must be " + extension);
+            }
+        }
+        return parser.getDestination() != null ? Files.newOutputStream(outputFile) : System.out;
     }
 
     private static void writeOutput(DestinationFormat format, OutputStream output, DataRoot dataRoot) throws IOException {
         switch (format) {
             case XLSX:
-                new ExcelWriter().write(output, dataRoot);
+                new ExcelWriter(ExcelWriter.Format.XLSX).write(output, dataRoot);
+                break;
+            case XLS:
+                new ExcelWriter(ExcelWriter.Format.XLS).write(output, dataRoot);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown format " + format);

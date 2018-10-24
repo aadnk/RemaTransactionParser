@@ -1,6 +1,5 @@
 package com.comphenix.rema1000.model;
 
-import com.comphenix.rema1000.beans.BeanMetadata;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
