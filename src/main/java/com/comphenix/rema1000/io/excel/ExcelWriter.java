@@ -96,7 +96,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
             return;
         }
         try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
-            tableConverter.writeTableTransactions(writer, transactionList);
+            tableConverter.writeJoinedTableTransactions(writer, transactionList);
         }
     }
 

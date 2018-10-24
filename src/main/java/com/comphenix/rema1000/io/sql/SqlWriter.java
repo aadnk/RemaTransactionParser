@@ -3,11 +3,9 @@ package com.comphenix.rema1000.io.sql;
 import com.comphenix.rema1000.io.DataTableConverter;
 import com.comphenix.rema1000.io.DataWriter;
 import com.comphenix.rema1000.io.TableWriter;
-import com.comphenix.rema1000.io.excel.WorkbookStyle;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.Transaction;
 import com.comphenix.rema1000.model.TransactionsInfo;
-import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 
 import java.io.BufferedWriter;
@@ -40,11 +38,19 @@ public class SqlWriter extends DataWriter<DataRoot> {
             try (SqlTableWriter tableWriter = new SqlTableWriter("Transactions", writer)) {
                 tableWriter.putTableColumn("transaction_id", new SqlTableWriter.TableColumn(
                         "transaction_id", String.class, true, null, null));
-                tableWriter.putTableColumn("receipt_entry_id", new SqlTableWriter.TableColumn(
-                        "receipt_entry_id", int.class, true, null, null));
 
                 if (transactionList != null) {
                     tableConverter.writeTableTransactions(tableWriter, transactionList);
+                }
+            }
+            try (SqlTableWriter tableWriter = new SqlTableWriter("Receipts", writer)) {
+                tableWriter.putTableColumn("receipt_entry_id", new SqlTableWriter.TableColumn(
+                        "receipt_entry_id", int.class, true, null, null));
+                tableWriter.putTableColumn("transaction_id", new SqlTableWriter.TableColumn(
+                        "transaction_id", String.class, false, "Transactions", "transaction_id"));
+
+                if (transactionList != null) {
+                    tableConverter.writeTableReceipts(tableWriter, transactionList);
                 }
             }
             try (SqlTableWriter tableWriter = new SqlTableWriter("TransactionsPayments", writer)) {
