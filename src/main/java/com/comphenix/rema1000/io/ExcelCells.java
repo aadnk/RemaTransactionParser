@@ -19,7 +19,7 @@ class ExcelCells {
      * @param value the value to write.
      * @param type the value type.
      */
-    public static void writeCell(ExcelWriter.WorkbookStyle workbookStyle, Cell cell, Object value, Class<?> type) {
+    public static void writeCell(WorkbookStyle workbookStyle, Cell cell, Object value, Class<?> type) {
         try {
             Class<?> wrappedType = Primitives.wrap(type);
 

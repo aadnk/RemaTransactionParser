@@ -8,7 +8,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import java.util.Objects;
 
 public class ExcelTableWriter extends AbstractTableWriter {
-    private final ExcelWriter.WorkbookStyle workbookStyle;
+    private final WorkbookStyle workbookStyle;
     private final Sheet sheet;
 
     // Position of the header row
@@ -22,11 +22,11 @@ public class ExcelTableWriter extends AbstractTableWriter {
     // Index of the current row (initially -1)
     private int dataIndex = -1;
 
-    public ExcelTableWriter(ExcelWriter.WorkbookStyle workbookStyle, Sheet sheet) {
+    public ExcelTableWriter(WorkbookStyle workbookStyle, Sheet sheet) {
         this(workbookStyle, sheet, 0, 1);
     }
 
-    public ExcelTableWriter(ExcelWriter.WorkbookStyle workbookStyle, Sheet sheet, int headerOffset, int dataOffset) {
+    public ExcelTableWriter(WorkbookStyle workbookStyle, Sheet sheet, int headerOffset, int dataOffset) {
         if (headerOffset < 0) {
             throw new IllegalArgumentException("headerOffset cannot be negative");
         }
