@@ -68,33 +68,36 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         ExcelCells.writeCell(style, row.createCell(1), infoValue, infoValue != null ? infoValue.getClass() : Object.class);
     }
 
-    private void writeTransactionsPayments(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) {
+    private void writeTransactionsPayments(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
-        tableConverter.writeTableTransactionsPayments(writer, transactionList);
+        try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
+            tableConverter.writeTableTransactionsPayments(writer, transactionList);
+        }
     }
 
-    private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) {
+    private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
-        tableConverter.writeTableTransactionsUsedOffers(writer, transactionList);
+        try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
+            tableConverter.writeTableTransactionsUsedOffers(writer, transactionList);
+        }
     }
 
-    private void writeTopList(WorkbookStyle workbookStyle, Sheet sheet, TopListMetadata metadata) {
+    private void writeTopList(WorkbookStyle workbookStyle, Sheet sheet, TopListMetadata metadata) throws IOException {
         TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
         tableConverter.writeTableTopList(writer, metadata);
     }
 
-    private void writeTransactions(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) {
+    private void writeTransactions(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
-        TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
-        tableConverter.writeTableTransactions(transactionList, writer);
+        try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
+            tableConverter.writeTableTransactions(writer, transactionList);
+        }
     }
 
     private WorkbookStyle createWorkbookStyle(Workbook workbook) {

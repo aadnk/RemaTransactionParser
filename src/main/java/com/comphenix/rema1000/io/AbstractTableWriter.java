@@ -3,6 +3,7 @@ package com.comphenix.rema1000.io;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -10,7 +11,9 @@ import java.util.Set;
 public abstract class AbstractTableWriter implements TableWriter {
     // Index of the current column (initially -1)
     private int columnIndex = -1;
-    private BiMap<String, Integer> headerLookup = HashBiMap.create();
+    protected BiMap<String, Integer> headerLookup = HashBiMap.create();
+
+    protected boolean closed;
 
     @Override
     public int getHeaderIndex(String header) {
@@ -33,7 +36,8 @@ public abstract class AbstractTableWriter implements TableWriter {
     }
 
     @Override
-    public int createHeader(String headerName) {
+    public int createHeader(String headerName) throws IOException {
+        checkClosed();
         Integer existing = headerLookup.get(headerName);
 
         if (existing == null) {
@@ -53,14 +57,23 @@ public abstract class AbstractTableWriter implements TableWriter {
      */
     protected abstract void onHeaderCreated(String headerName, int headerIndex);
 
+    /**
+     * Determine if the current writer is closed.
+     */
+    protected void checkClosed() {
+        if (closed) {
+            throw new IllegalStateException("Writer is closed");
+        }
+    }
 
     @Override
-    public void write(String headerName, Object value) {
+    public void write(String headerName, Object value) throws IOException {
         write(headerName, value, value != null ? value.getClass() : Object.class);
     }
 
     @Override
-    public void write(String headerName, Object value, Class<?> type) {
+    public void write(String headerName, Object value, Class<?> type) throws IOException {
+        checkClosed();
         Objects.requireNonNull(type,"type cannot be NULL");
         Objects.requireNonNull(headerName, "headerName cannot be NULL");
 
@@ -69,12 +82,13 @@ public abstract class AbstractTableWriter implements TableWriter {
     }
 
     @Override
-    public void write(int headerIndex, Object value) {
+    public void write(int headerIndex, Object value) throws IOException {
         write(headerIndex, value, value != null ? value.getClass() : Object.class);
     }
 
     @Override
-    public void write(int headerIndex, Object value, Class<?> type) {
+    public void write(int headerIndex, Object value, Class<?> type) throws IOException {
+        checkClosed();
         Objects.requireNonNull(type,"type cannot be NULL");
 
         if (headerIndex < 0 || headerIndex > columnIndex) {
@@ -89,5 +103,18 @@ public abstract class AbstractTableWriter implements TableWriter {
      * @param value the value.
      * @param type the value type.
      */
-    protected abstract void onWriteValue(int headerIndex, Object value, Class<?> type);
+    protected abstract void onWriteValue(int headerIndex, Object value, Class<?> type) throws IOException;
+
+    /**
+     * Invoked when the writer is closed.
+     */
+    protected abstract void onClosed() throws IOException;
+
+    @Override
+    public void close() throws IOException {
+        if (!closed) {
+            closed = true;
+            onClosed();
+        }
+    }
 }

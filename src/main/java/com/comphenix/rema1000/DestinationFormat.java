@@ -2,7 +2,8 @@ package com.comphenix.rema1000;
 
 public enum DestinationFormat {
     XLSX("xlsx"),
-    XLS("xls");
+    XLS("xls"),
+    SQL("sql");
 
     private final String extension;
 

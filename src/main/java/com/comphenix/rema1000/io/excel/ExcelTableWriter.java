@@ -83,4 +83,9 @@ public class ExcelTableWriter extends AbstractTableWriter {
         }
         return result;
     }
+
+    @Override
+    protected void onClosed() {
+        // NOP
+    }
 }

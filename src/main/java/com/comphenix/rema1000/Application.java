@@ -1,6 +1,7 @@
 package com.comphenix.rema1000;
 
 import com.comphenix.rema1000.io.excel.ExcelWriter;
+import com.comphenix.rema1000.io.sql.SqlWriter;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.ReceiptEntry;
 import com.comphenix.rema1000.model.Transaction;
@@ -145,6 +146,9 @@ public class Application {
                 break;
             case XLS:
                 new ExcelWriter(ExcelWriter.Format.XLS).write(output, dataRoot);
+                break;
+            case SQL:
+                new SqlWriter().write(output, dataRoot);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown format " + format);
