@@ -6,12 +6,12 @@ import com.comphenix.rema1000.io.TableWriter;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.Transaction;
 import com.comphenix.rema1000.model.TransactionsInfo;
-import com.google.common.base.Charsets;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class SqlWriter extends DataWriter<DataRoot> {
@@ -25,7 +25,7 @@ public class SqlWriter extends DataWriter<DataRoot> {
 
     @Override
     public void write(OutputStream output, DataRoot data) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, Charsets.UTF_8))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
 
             try (SqlTableWriter tableWriter = new SqlTableWriter("TopList", writer)) {
                 tableWriter.putTableColumn("rank", new SqlTableWriter.TableColumn(

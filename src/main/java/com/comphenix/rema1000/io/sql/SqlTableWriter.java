@@ -1,8 +1,6 @@
 package com.comphenix.rema1000.io.sql;
 
 import com.comphenix.rema1000.io.AbstractTableWriter;
-import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
 import com.google.gson.internal.Primitives;
 
 import java.io.IOException;
@@ -73,7 +71,7 @@ public class SqlTableWriter extends AbstractTableWriter {
     private final String lineBreak = System.lineSeparator();
 
     // Current columns
-    private Map<String, TableColumn> tableColumns = Maps.newHashMap();
+    private Map<String, TableColumn> tableColumns = new HashMap<>();
 
     // Current values to be written to the output
     private List<Object> values = new ArrayList<>();
@@ -118,7 +116,7 @@ public class SqlTableWriter extends AbstractTableWriter {
     public TableColumn getTableColumn(String headerName) {
         TableColumn result = tableColumns.get(headerName);
 
-        if (result == null && headerLookup.containsKey(headerName)) {
+        if (result == null && headerIndexLookup.containsKey(headerName)) {
             // Default column
             result = new TableColumn(headerName);
         }
@@ -208,7 +206,7 @@ public class SqlTableWriter extends AbstractTableWriter {
                 builder.append(" ");
                 writeColumnType(builder, columnType);
             }
-            if (!Strings.isNullOrEmpty(column.getForeignTable())) {
+            if (column.getForeignTable() != null && !column.getForeignTable().isEmpty()) {
                 builder.append(" REFERENCES ");
                 writeIdentifier(builder, column.getForeignTable());
                 builder.append("(");

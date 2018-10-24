@@ -1,12 +1,12 @@
 package com.comphenix.rema1000.io;
 
 import com.comphenix.rema1000.model.*;
-import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Convert data to individual tables.
@@ -80,8 +80,9 @@ public class DataTableConverter {
         int volume = createHeader(writer, "Volume");
         
         // Sort entries by rank
-        ImmutableList<ScorecardEntry> entries = ImmutableList.sortedCopyOf(
-                Comparator.comparing(ScorecardEntry::getRank), metadata.getScorecard());
+        List<ScorecardEntry> entries = metadata.getScorecard().stream().sorted(
+                Comparator.comparing(ScorecardEntry::getRank)).
+                collect(Collectors.toList());
 
         for (ScorecardEntry entry : entries) {
             writer.incrementRow();

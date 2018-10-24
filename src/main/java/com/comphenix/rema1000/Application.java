@@ -5,7 +5,6 @@ import com.comphenix.rema1000.io.sql.SqlWriter;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.ReceiptEntry;
 import com.comphenix.rema1000.model.Transaction;
-import com.google.common.io.MoreFiles;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
@@ -128,8 +127,9 @@ public class Application {
         Path outputFile = parser.getDestination();
 
         if (extension != null && outputFile != null) {
-            @SuppressWarnings("UnstableApiUsage")
-            String fileExtension = MoreFiles.getFileExtension(outputFile);
+            String fileName = outputFile.getFileName().toString();
+            int dotIndex = fileName.lastIndexOf('.');
+            String fileExtension = dotIndex != -1 ? fileName.substring(dotIndex + 1) : "";
 
             // Error
             if (!extension.equalsIgnoreCase(fileExtension)) {

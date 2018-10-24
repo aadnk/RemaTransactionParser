@@ -1,28 +1,24 @@
 package com.comphenix.rema1000.io;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public abstract class AbstractTableWriter implements TableWriter {
     // Index of the current column (initially -1)
     private int columnIndex = -1;
-    protected BiMap<String, Integer> headerLookup = HashBiMap.create();
+    protected Map<String, Integer> headerIndexLookup = new HashMap<>();
+    protected Map<Integer, String> headerNameLookup = new HashMap<>();
 
     protected boolean closed;
 
     @Override
     public int getHeaderIndex(String header) {
-        return headerLookup.getOrDefault(header, -1);
+        return headerIndexLookup.getOrDefault(header, -1);
     }
 
     @Override
     public String getHeaderName(int index) {
-        return headerLookup.inverse().get(index);
+        return headerNameLookup.get(index);
     }
 
     @Override
@@ -32,19 +28,20 @@ public abstract class AbstractTableWriter implements TableWriter {
 
     @Override
     public Set<String> headers() {
-        return Collections.unmodifiableSet(headerLookup.keySet());
+        return Collections.unmodifiableSet(headerIndexLookup.keySet());
     }
 
     @Override
     public int createHeader(String headerName) throws IOException {
         checkClosed();
-        Integer existing = headerLookup.get(headerName);
+        Integer existing = headerIndexLookup.get(headerName);
 
         if (existing == null) {
             int column = ++columnIndex;
 
             onHeaderCreated(headerName, column);
-            headerLookup.put(headerName, column);
+            headerIndexLookup.put(headerName, column);
+            headerNameLookup.put(column, headerName);
             return column;
         }
         return existing;
