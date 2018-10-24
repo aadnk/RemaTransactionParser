@@ -1,4 +1,4 @@
-package com.comphenix.rema1000.io;
+package com.comphenix.rema1000.io.excel;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 

@@ -1,5 +1,6 @@
-package com.comphenix.rema1000.io;
+package com.comphenix.rema1000.io.excel;
 
+import com.comphenix.rema1000.io.AbstractTableWriter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;

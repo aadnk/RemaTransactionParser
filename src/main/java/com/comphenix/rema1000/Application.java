@@ -1,6 +1,6 @@
 package com.comphenix.rema1000;
 
-import com.comphenix.rema1000.io.ExcelWriter;
+import com.comphenix.rema1000.io.excel.ExcelWriter;
 import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.ReceiptEntry;
 import com.comphenix.rema1000.model.Transaction;
