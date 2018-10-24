@@ -1,7 +1,5 @@
 package com.comphenix.rema1000.io.excel;
 
-import org.apache.poi.ss.usermodel.CellStyle;
-
 public class WorkbookStyle {
     private CellStyle headerStyle;
     private CellStyle dateStyle;

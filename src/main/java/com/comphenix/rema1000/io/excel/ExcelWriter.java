@@ -7,9 +7,8 @@ import com.comphenix.rema1000.model.DataRoot;
 import com.comphenix.rema1000.model.TopListMetadata;
 import com.comphenix.rema1000.model.Transaction;
 import com.comphenix.rema1000.model.TransactionsInfo;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.dhatim.fastexcel.Workbook;
+import org.dhatim.fastexcel.Worksheet;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,58 +16,39 @@ import java.util.List;
 import java.util.Objects;
 
 public class ExcelWriter extends DataWriter<DataRoot> {
-    public enum Format {
-        XLSX,
-        XLS
-    }
-
-    private Format format;
     private DataTableConverter tableConverter = new DataTableConverter();
-
-    public ExcelWriter(Format format) {
-        this.format = Objects.requireNonNull(format, "format cannot be NULL");
-    }
 
     @Override
     public void write(OutputStream output, DataRoot data) throws IOException {
-        try (Workbook workbook = createWorkbook()) {
-            WorkbookStyle workbookStyle = createWorkbookStyle(workbook);
+        Workbook workbook = new Workbook(output, "RemaTransactionParser", "1.0");
+        WorkbookStyle workbookStyle = createWorkbookStyle();
 
-            writeTransactionsInfo(workbookStyle, workbook.createSheet("Info"), data.getTransactionsInfo());
+        writeTransactionsInfo(workbookStyle, workbook.newWorksheet("Info"), data.getTransactionsInfo());
 
-            writeTopList(workbookStyle, workbook.createSheet("TopList"),
-                    data.getTopList());
-            writeTransactions(workbookStyle, workbook.createSheet("Transactions"),
-                    data.getTransactionsInfo().getTransactionList());
-            writeTransactionsPayments(workbookStyle, workbook.createSheet("Transactions Payments"),
-                    data.getTransactionsInfo().getTransactionList());
-            writeTransactionUsedOffers(workbookStyle, workbook.createSheet("Used Offers"),
-                    data.getTransactionsInfo().getTransactionList());
+        writeTopList(workbookStyle, workbook.newWorksheet("TopList"),
+                data.getTopList());
+        writeTransactions(workbookStyle, workbook.newWorksheet("Transactions"),
+                data.getTransactionsInfo().getTransactionList());
+        writeTransactionsPayments(workbookStyle, workbook.newWorksheet("Transactions Payments"),
+                data.getTransactionsInfo().getTransactionList());
+        writeTransactionUsedOffers(workbookStyle, workbook.newWorksheet("Used Offers"),
+                data.getTransactionsInfo().getTransactionList());
 
-            workbook.write(output);
-        }
+        workbook.finish();
     }
 
-    private Workbook createWorkbook() {
-        return format == Format.XLSX ? new XSSFWorkbook() : new HSSFWorkbook();
-    }
-
-    private void writeTransactionsInfo(WorkbookStyle workbookStyle, Sheet info, TransactionsInfo transactionsInfo) {
+    private void writeTransactionsInfo(WorkbookStyle workbookStyle, Worksheet info, TransactionsInfo transactionsInfo) {
         writeInfoLine(workbookStyle, info, 0, "Bonus Total", transactionsInfo.getBonusTotal());
         writeInfoLine(workbookStyle, info, 1, "Discount Total", transactionsInfo.getDiscountTotal());
         writeInfoLine(workbookStyle, info, 2, "Purchase Total", transactionsInfo.getPurchaseTotal());
     }
 
-    private void writeInfoLine(WorkbookStyle style, Sheet sheet, int rowIndex, String infoName, Object infoValue) {
-        Row row = sheet.createRow(rowIndex);
-        Cell headerCell = row.createCell(0);
-        headerCell.setCellStyle(style.getHeaderStyle());
-        headerCell.setCellValue(infoName);
-
-        ExcelCells.writeCell(style, row.createCell(1), infoValue, infoValue != null ? infoValue.getClass() : Object.class);
+    private void writeInfoLine(WorkbookStyle style, Worksheet sheet, int rowIndex, String infoName, Object infoValue) {
+        CellStyle.writeStyled(sheet, rowIndex, 0, infoName, style.getHeaderStyle());
+        CellStyle.writeStyled(sheet, rowIndex, 1, infoValue, null);
     }
 
-    private void writeTransactionsPayments(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
+    private void writeTransactionsPayments(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
@@ -77,7 +57,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         }
     }
 
-    private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
+    private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
@@ -86,12 +66,12 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         }
     }
 
-    private void writeTopList(WorkbookStyle workbookStyle, Sheet sheet, TopListMetadata metadata) throws IOException {
+    private void writeTopList(WorkbookStyle workbookStyle, Worksheet sheet, TopListMetadata metadata) throws IOException {
         TableWriter writer = new ExcelTableWriter(workbookStyle, sheet);
         tableConverter.writeTableTopList(writer, metadata);
     }
 
-    private void writeTransactions(WorkbookStyle workbookStyle, Sheet sheet, List<Transaction> transactionList) throws IOException {
+    private void writeTransactions(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
         if (transactionList == null || transactionList.isEmpty()) {
             return;
         }
@@ -100,20 +80,10 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         }
     }
 
-    private WorkbookStyle createWorkbookStyle(Workbook workbook) {
-        CellStyle headerStyle = createHeaderStyle(workbook);
-        CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat((short)0x16);
-
-        return new WorkbookStyle(headerStyle, dateStyle);
-    }
-
-    private CellStyle createHeaderStyle(Workbook workbook) {
-        CellStyle headerStyle = workbook.createCellStyle();
-
-        Font headerFont = workbook.createFont();
-        headerFont.setBold(true);
-        headerStyle.setFont(headerFont);
-        return headerStyle;
+    private WorkbookStyle createWorkbookStyle() {
+        return new WorkbookStyle(
+            (sheet, r, c) -> sheet.style(r, c).bold().set(),
+            (sheet, r, c) -> sheet.style(r, c).format(Integer.toString(0x16)).set()
+        );
     }
 }

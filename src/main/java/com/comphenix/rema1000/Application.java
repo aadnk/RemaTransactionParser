@@ -142,10 +142,7 @@ public class Application {
     private static void writeOutput(DestinationFormat format, OutputStream output, DataRoot dataRoot) throws IOException {
         switch (format) {
             case XLSX:
-                new ExcelWriter(ExcelWriter.Format.XLSX).write(output, dataRoot);
-                break;
-            case XLS:
-                new ExcelWriter(ExcelWriter.Format.XLS).write(output, dataRoot);
+                new ExcelWriter().write(output, dataRoot);
                 break;
             case SQL:
                 new SqlWriter().write(output, dataRoot);

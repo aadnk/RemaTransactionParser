@@ -1,33 +1,29 @@
 package com.comphenix.rema1000.io.excel;
 
 import com.comphenix.rema1000.io.AbstractTableWriter;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
+import org.dhatim.fastexcel.Worksheet;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.Objects;
 
 public class ExcelTableWriter extends AbstractTableWriter {
     private final WorkbookStyle workbookStyle;
-    private final Sheet sheet;
+    private final Worksheet sheet;
 
     // Position of the header row
     private int headerOffset;
     // Position of the first data row
     private int dataOffset;
 
-    private Row headerRow;
-    private Row dataRow;
-
     // Index of the current row (initially -1)
     private int dataIndex = -1;
 
-    public ExcelTableWriter(WorkbookStyle workbookStyle, Sheet sheet) {
+    public ExcelTableWriter(WorkbookStyle workbookStyle, Worksheet sheet) {
         this(workbookStyle, sheet, 0, 1);
     }
 
-    public ExcelTableWriter(WorkbookStyle workbookStyle, Sheet sheet, int headerOffset, int dataOffset) {
+    public ExcelTableWriter(WorkbookStyle workbookStyle, Worksheet sheet, int headerOffset, int dataOffset) {
         if (headerOffset < 0) {
             throw new IllegalArgumentException("headerOffset cannot be negative");
         }
@@ -42,7 +38,6 @@ public class ExcelTableWriter extends AbstractTableWriter {
 
     @Override
     public void incrementRow() {
-        this.dataRow = null;
         this.dataIndex++;
     }
 
@@ -53,35 +48,16 @@ public class ExcelTableWriter extends AbstractTableWriter {
 
     @Override
     protected void onHeaderCreated(String headerName, int headerIndex) {
-        Cell headerCell = getHeaderRow().createCell(headerIndex, CellType.STRING);
-        headerCell.setCellStyle(workbookStyle.getHeaderStyle());
-        headerCell.setCellValue(headerName);
+        CellStyle.writeStyled(sheet, headerOffset, headerIndex, headerName, workbookStyle.getHeaderStyle());
     }
 
     @Override
     protected void onWriteValue(int headerIndex, Object value, Class<?> type) {
-        ExcelCells.writeCell(workbookStyle, getDataRow().createCell(headerIndex), value, type);
-    }
-
-    private Row getHeaderRow() {
-        Row result = headerRow;
-
-        if (result == null) {
-            result = headerRow = sheet.createRow(headerOffset);
+        if (dataIndex < 0) {
+            throw new IllegalStateException("Must call incrementRow() first");
         }
-        return result;
-    }
-
-    private Row getDataRow() {
-        Row result = dataRow;
-
-        if (result == null) {
-            if (dataIndex < 0) {
-                throw new IllegalStateException("Must call incrementRow() first");
-            }
-            result = dataRow = sheet.createRow(dataOffset + dataIndex);
-        }
-        return result;
+        CellStyle style = Instant.class.equals(type) || Date.class.equals(type) ? workbookStyle.getDateStyle() : null;
+        CellStyle.writeStyled(sheet, dataOffset + dataIndex, headerIndex, value, style);
     }
 
     @Override
