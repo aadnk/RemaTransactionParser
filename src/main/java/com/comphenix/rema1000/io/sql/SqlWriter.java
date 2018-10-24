@@ -29,23 +29,42 @@ public class SqlWriter extends DataWriter<DataRoot> {
     public void write(OutputStream output, DataRoot data) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, Charsets.UTF_8))) {
 
-            try (TableWriter tableWriter = new SqlTableWriter("TopList", writer)) {
+            try (SqlTableWriter tableWriter = new SqlTableWriter("TopList", writer)) {
+                tableWriter.putTableColumn("rank", new SqlTableWriter.TableColumn(
+                        "rank", int.class, true, null, null));
                 tableConverter.writeTableTopList(tableWriter, data.getTopList());
             }
             TransactionsInfo transactionsInfo = data.getTransactionsInfo();
             List<Transaction> transactionList = transactionsInfo != null ? transactionsInfo.getTransactionList() : null;
 
-            try (TableWriter tableWriter = new SqlTableWriter("Transactions", writer)) {
+            try (SqlTableWriter tableWriter = new SqlTableWriter("Transactions", writer)) {
+                tableWriter.putTableColumn("transaction_id", new SqlTableWriter.TableColumn(
+                        "transaction_id", String.class, true, null, null));
+                tableWriter.putTableColumn("receipt_entry_id", new SqlTableWriter.TableColumn(
+                        "receipt_entry_id", int.class, true, null, null));
+
                 if (transactionList != null) {
                     tableConverter.writeTableTransactions(tableWriter, transactionList);
                 }
             }
-            try (TableWriter tableWriter = new SqlTableWriter("TransactionsPayments", writer)) {
+            try (SqlTableWriter tableWriter = new SqlTableWriter("TransactionsPayments", writer)) {
+                tableWriter.putTableColumn("transaction_id", new SqlTableWriter.TableColumn(
+                        "transaction_id", String.class, true, "Transactions", "transaction_id"));
+                tableWriter.putTableColumn("means_of_payment_desc", new SqlTableWriter.TableColumn(
+                        "means_of_payment_desc", String.class, true, null, null));
+
                 if (transactionList != null) {
                     tableConverter.writeTableTransactionsPayments(tableWriter, transactionList);
                 }
             }
-            try (TableWriter tableWriter = new SqlTableWriter("UsedOffers", writer)) {
+            try (SqlTableWriter tableWriter = new SqlTableWriter("UsedOffers", writer)) {
+                tableWriter.putTableColumn("transaction_id", new SqlTableWriter.TableColumn(
+                        "transaction_id", String.class, true, "Transactions", "transaction_id"));
+                tableWriter.putTableColumn("receipt_entry_id", new SqlTableWriter.TableColumn(
+                        "receipt_entry_id", int.class, true, null, null));
+                tableWriter.putTableColumn("offer_code", new SqlTableWriter.TableColumn(
+                        "offer_code", String.class, true, null, null));
+
                 if (transactionList != null) {
                     tableConverter.writeTableTransactionsUsedOffers(tableWriter, transactionList);
                 }

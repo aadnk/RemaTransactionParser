@@ -1,7 +1,9 @@
 package com.comphenix.rema1000.io.sql;
 
 import com.comphenix.rema1000.io.AbstractTableWriter;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import com.google.gson.internal.Primitives;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -11,19 +13,25 @@ import java.util.*;
 public class SqlTableWriter extends AbstractTableWriter {
     public static class TableColumn {
         private final String columnName;
+        private final Class<?> columnType;
         private final boolean primaryKey;
         private final String foreignTable;
         private final String foreignColumn;
 
-        public TableColumn(String tableName) {
-            this(tableName, false, null, null);
+        public TableColumn(String columnName) {
+            this(columnName, null, false, null, null);
         }
 
-        public TableColumn(String columnName, boolean primaryKey, String foreignTable, String foreignColumn) {
+        public TableColumn(String columnName, Class<?> columnType, boolean primaryKey, String foreignTable, String foreignColumn) {
             this.columnName = Objects.requireNonNull(columnName, "tableName cannot be NULL");
+            this.columnType = columnType;
             this.primaryKey = primaryKey;
             this.foreignTable = foreignTable;
             this.foreignColumn = foreignColumn;
+        }
+
+        public Class<?> getColumnType() {
+            return columnType;
         }
 
         public String getColumnName() {
@@ -46,16 +54,17 @@ public class SqlTableWriter extends AbstractTableWriter {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            TableColumn that = (TableColumn) o;
-            return primaryKey == that.primaryKey &&
-                    Objects.equals(columnName, that.columnName) &&
-                    Objects.equals(foreignTable, that.foreignTable) &&
-                    Objects.equals(foreignColumn, that.foreignColumn);
+            TableColumn column = (TableColumn) o;
+            return primaryKey == column.primaryKey &&
+                    Objects.equals(columnName, column.columnName) &&
+                    Objects.equals(columnType, column.columnType) &&
+                    Objects.equals(foreignTable, column.foreignTable) &&
+                    Objects.equals(foreignColumn, column.foreignColumn);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(columnName, primaryKey, foreignTable, foreignColumn);
+            return Objects.hash(columnName, columnType, primaryKey, foreignTable, foreignColumn);
         }
     }
     private final String tableName;
@@ -68,6 +77,7 @@ public class SqlTableWriter extends AbstractTableWriter {
 
     // Current values to be written to the output
     private List<Object> values = new ArrayList<>();
+    private List<Class<?>> types = new ArrayList<>();
 
     // Index of the current row (initially -1)
     private int dataIndex = -1;
@@ -123,13 +133,17 @@ public class SqlTableWriter extends AbstractTableWriter {
 
     @Override
     protected void onHeaderCreated(String headerName, int headerIndex) {
-        // Do nothing until we write the headers
+        if (columnCreationFrozen) {
+            throw new IllegalArgumentException("Cannot create header " + headerName + " after the first row has been finished.");
+        }
     }
 
     @Override
     protected void onWriteValue(int headerIndex, Object value, Class<?> type) throws IOException {
         resizeList(values, headerIndex + 1);
+        resizeList(types, headerIndex + 1);
         values.set(headerIndex, value);
+        types.set(headerIndex, type);
     }
 
     @Override
@@ -140,6 +154,7 @@ public class SqlTableWriter extends AbstractTableWriter {
         if (dataIndex == 0) {
             writeRow();
         }
+        writer.write(lineBreak);
     }
 
     @Override
@@ -148,19 +163,108 @@ public class SqlTableWriter extends AbstractTableWriter {
 
         // See if we have any data to write
         if (dataIndex > 0) {
+            if (dataIndex == 1) {
+                writeHeaders();
+            }
             writeRow();
             values.clear();
         }
     }
 
-    protected void writeHeaders() {
-        // TODO
+    /**
+     * Determine if column creation is now frozen.
+     * @return TRUE if it is, FALSE otherwise.
+     */
+    public boolean isColumnCreationFrozen() {
+        return columnCreationFrozen;
+    }
+
+    protected void writeHeaders() throws IOException {
+        columnCreationFrozen = true;
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("CREATE TABLE ");
+        writeIdentifier(builder, tableName);
+        builder.append(" (").append(lineBreak);
+
+        Set<String> primaryKeys = new HashSet<>();
+
+        for (int i = 0; i < getHeaderCount(); i++) {
+            TableColumn column = getTableColumn(i);
+            Class<?> columnType = column.getColumnType();
+
+            // Fetch known column type
+            if (columnType == null && i < types.size()) {
+                columnType = types.get(i);
+            }
+            if (i > 0) {
+                builder.append(",");
+                builder.append(lineBreak);
+            }
+            builder.append("  ");
+            writeIdentifier(builder, column.getColumnName());
+
+            if (columnType != null) {
+                builder.append(" ");
+                writeColumnType(builder, columnType);
+            }
+            if (!Strings.isNullOrEmpty(column.getForeignTable())) {
+                builder.append(" REFERENCES ");
+                writeIdentifier(builder, column.getForeignTable());
+                builder.append("(");
+                writeIdentifier(builder, column.getForeignColumn());
+                builder.append(")");
+            }
+            if (column.isPrimaryKey()) {
+                primaryKeys.add(column.getColumnName());
+            }
+        }
+        // Finally, write primary keys
+        if (primaryKeys.size() > 0) {
+            builder.append(",");
+            builder.append(lineBreak);
+            builder.append("  PRIMARY KEY(");
+            boolean firstKey = true;
+
+            for (String primaryKey : primaryKeys) {
+                if (!firstKey) {
+                    builder.append(", ");
+                }
+                writeIdentifier(builder, primaryKey);
+                firstKey = false;
+            }
+            builder.append(")");
+        }
+        builder.append(lineBreak);
+        builder.append(");");
+        builder.append(lineBreak);
+        writer.write(builder.toString());
+    }
+
+    private void writeColumnType(StringBuilder builder, Class<?> columnType) {
+        Class<?> unwrapped = Primitives.unwrap(columnType);
+
+        if (byte.class.equals(unwrapped) || short.class.equals(unwrapped) || int.class.equals(unwrapped) ||
+                long.class.equals(unwrapped) || boolean.class.equals(unwrapped)) {
+            builder.append("INTEGER");
+        } else if (float.class.equals(unwrapped) || double.class.equals(unwrapped)) {
+            builder.append("REAL");
+        } else if (CharSequence.class.isAssignableFrom(columnType) || char.class.equals(columnType)) {
+            builder.append("TEXT");
+        } else if (byte[].class.equals(columnType)) {
+            builder.append("BLOB");
+        } else if (Instant.class.equals(columnType) || Date.class.equals(columnType)) {
+            builder.append("DATETIME");
+        } else {
+            throw new IllegalArgumentException("Unknown column type " + columnType);
+        }
+
     }
 
     protected void writeRow() throws IOException {
         StringBuilder builder = new StringBuilder();
         builder.append("INSERT INTO ");
-        builder.append(tableName);
+        writeIdentifier(builder, tableName);
         builder.append("(");
 
         for (int i = 0; i < values.size(); i++) {
@@ -169,7 +273,7 @@ public class SqlTableWriter extends AbstractTableWriter {
             if (i > 0) {
                 builder.append(", ");
             }
-            builder.append(column.getColumnName());
+            writeIdentifier(builder, column.getColumnName());
         }
         builder.append(") VALUES (");
 
@@ -193,10 +297,8 @@ public class SqlTableWriter extends AbstractTableWriter {
             builder.append(((Instant) value).toEpochMilli());
         } else if (value instanceof Date) {
             builder.append(((Date) value).getTime());
-        } else if (value instanceof String) {
-            builder.append("\"");
-            builder.append(value);
-            builder.append("\"");
+        } else if (value instanceof CharSequence) {
+            writeString(builder, (CharSequence) value);
         } else if (value instanceof Number) {
             builder.append(value.toString());
         } else if (value instanceof Boolean) {
@@ -206,6 +308,33 @@ public class SqlTableWriter extends AbstractTableWriter {
         } else {
             throw new IllegalArgumentException("Unknown type of value " + value);
         }
+    }
+
+    private void writeIdentifier(StringBuilder builder, String value) {
+        if (value.isEmpty()) {
+            return;
+        }
+        writeQuoted(builder, value, '"');
+    }
+
+    private void writeString(StringBuilder builder, CharSequence value) {
+        writeQuoted(builder, value, '\'');
+    }
+
+    private void writeQuoted(StringBuilder builder, CharSequence value, char quote) {
+        builder.append(quote);
+
+        for (int i = 0; i < value.length(); i++) {
+            char current = value.charAt(i);
+
+            // Escape quote
+            if (current == quote) {
+                builder.append(quote).append(quote);
+            } else {
+                builder.append(current);
+            }
+        }
+        builder.append(quote);
     }
 
     @Override
