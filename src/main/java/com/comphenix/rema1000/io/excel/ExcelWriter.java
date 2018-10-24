@@ -83,7 +83,7 @@ public class ExcelWriter extends DataWriter<DataRoot> {
     private WorkbookStyle createWorkbookStyle() {
         return new WorkbookStyle(
             (sheet, r, c) -> sheet.style(r, c).bold().set(),
-            (sheet, r, c) -> sheet.style(r, c).format(Integer.toString(0x16)).set()
+            (sheet, r, c) -> sheet.style(r, c).format("yyyy-mm-dd hh:mm:ss").set()
         );
     }
 }
