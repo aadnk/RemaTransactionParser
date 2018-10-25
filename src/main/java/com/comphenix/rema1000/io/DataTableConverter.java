@@ -120,9 +120,8 @@ public class DataTableConverter {
         int productGroupDesc = createHeader(writer, "Product Group Desc");
         int bonusBased = createHeader(writer, "Bonus Based");
         int pieces = createHeader(writer, "Pieces");
-        int productPrice = createHeader(writer, "Product Price");
+        int productPrice = createHeader(writer, "Product Total Price");
         int productDiscount = createHeader(writer, "Product Discount");
-        int productNetPrice = createHeader(writer, "Product Net Price");
         int productDeposit = createHeader(writer, "Product Deposit");
         int volumeAmount = createHeader(writer, "Volume Amount");
         int volumeUnit = createHeader(writer, "Volume Unit");
@@ -157,7 +156,6 @@ public class DataTableConverter {
                 writer.write(pieces, receiptEntry.getPieces());
                 writer.write(productPrice, receiptEntry.getPriceAmount());
                 writer.write(productDiscount, receiptEntry.getPriceDiscount());
-                writer.write(productNetPrice, receiptEntry.getPriceAmount() + receiptEntry.getPriceDiscount());
                 writer.write(productDeposit, receiptEntry.getDeposit());
                 writer.write(volumeAmount, receiptEntry.getVolumeAmount());
                 writer.write(volumeUnit, receiptEntry.getVolumeUnit());
@@ -210,9 +208,8 @@ public class DataTableConverter {
         int productGroupDesc = createHeader(writer, "Product Group Desc");
         int bonusBased = createHeader(writer, "Bonus Based");
         int pieces = createHeader(writer, "Pieces");
-        int productPrice = createHeader(writer, "Product Price");
+        int productPrice = createHeader(writer, "Product Total Price");
         int productDiscount = createHeader(writer, "Product Discount");
-        int productNetPrice = createHeader(writer, "Product Net Price");
         int productDeposit = createHeader(writer, "Product Deposit");
         int volumeAmount = createHeader(writer, "Volume Amount");
         int volumeUnit = createHeader(writer, "Volume Unit");
@@ -237,7 +234,6 @@ public class DataTableConverter {
                 writer.write(pieces, receiptEntry.getPieces());
                 writer.write(productPrice, receiptEntry.getPriceAmount());
                 writer.write(productDiscount, receiptEntry.getPriceDiscount());
-                writer.write(productNetPrice, receiptEntry.getPriceAmount() + receiptEntry.getPriceDiscount());
                 writer.write(productDeposit, receiptEntry.getDeposit());
                 writer.write(volumeAmount, receiptEntry.getVolumeAmount());
                 writer.write(volumeUnit, receiptEntry.getVolumeUnit());

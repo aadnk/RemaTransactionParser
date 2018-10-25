@@ -13,7 +13,6 @@ import org.dhatim.fastexcel.Worksheet;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.Objects;
 
 public class ExcelWriter extends DataWriter<DataRoot> {
     private DataTableConverter tableConverter = new DataTableConverter();
@@ -23,16 +22,30 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         Workbook workbook = new Workbook(output, "RemaTransactionParser", "1.0");
         WorkbookStyle workbookStyle = createWorkbookStyle();
 
-        writeTransactionsInfo(workbookStyle, workbook.newWorksheet("Info"), data.getTransactionsInfo());
+        TransactionsInfo transactionsInfo = data.getTransactionsInfo();
 
+        if (transactionsInfo != null) {
+            writeTransactionsInfo(workbookStyle, workbook.newWorksheet("Info"), transactionsInfo);
+        }
         writeTopList(workbookStyle, workbook.newWorksheet("TopList"),
                 data.getTopList());
+
+        if (transactionsInfo == null) {
+            return;
+        }
+        List<Transaction> transactions = transactionsInfo.getTransactionList();
+
+        if (transactions == null || transactions.isEmpty()) {
+            return;
+        }
         writeTransactions(workbookStyle, workbook.newWorksheet("Transactions"),
-                data.getTransactionsInfo().getTransactionList());
+                transactions);
+        writeReceiptEntries(workbookStyle, workbook.newWorksheet("Receipt Entries"),
+                transactions);
         writeTransactionsPayments(workbookStyle, workbook.newWorksheet("Transactions Payments"),
-                data.getTransactionsInfo().getTransactionList());
+                transactions);
         writeTransactionUsedOffers(workbookStyle, workbook.newWorksheet("Used Offers"),
-                data.getTransactionsInfo().getTransactionList());
+                transactions);
 
         workbook.finish();
     }
@@ -49,18 +62,12 @@ public class ExcelWriter extends DataWriter<DataRoot> {
     }
 
     private void writeTransactionsPayments(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
-        if (transactionList == null || transactionList.isEmpty()) {
-            return;
-        }
         try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
             tableConverter.writeTableTransactionsPayments(writer, transactionList);
         }
     }
 
     private void writeTransactionUsedOffers(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
-        if (transactionList == null || transactionList.isEmpty()) {
-            return;
-        }
         try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
             tableConverter.writeTableTransactionsUsedOffers(writer, transactionList);
         }
@@ -71,12 +78,15 @@ public class ExcelWriter extends DataWriter<DataRoot> {
         tableConverter.writeTableTopList(writer, metadata);
     }
 
-    private void writeTransactions(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
-        if (transactionList == null || transactionList.isEmpty()) {
-            return;
-        }
+    private void writeReceiptEntries(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
         try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
             tableConverter.writeJoinedTableTransactions(writer, transactionList);
+        }
+    }
+
+    private void writeTransactions(WorkbookStyle workbookStyle, Worksheet sheet, List<Transaction> transactionList) throws IOException {
+        try (TableWriter writer = new ExcelTableWriter(workbookStyle, sheet)) {
+            tableConverter.writeTableTransactions(writer, transactionList);
         }
     }
 
