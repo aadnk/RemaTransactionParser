@@ -20,12 +20,18 @@ public class Application {
     private static class ArgumentParser {
         private Path source;
         private Path destination;
-        private DestinationFormat format = DestinationFormat.XLSX; // Default
+        private DestinationFormat format = null; // Deduce from file extension
 
         private boolean streamMode;
         private int pathCount;
 
+        private boolean showHelp;
+
         public void parse(String[] args) {
+            if (args == null || args.length == 0) {
+                showHelp = true;
+                return;
+            }
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
 
@@ -40,6 +46,11 @@ public class Application {
                             // Allow no source or destination path
                             streamMode = true;
                             break;
+                        case "-?":
+                        case "-h":
+                        case "--help":
+                            showHelp = true;
+                            return;
                         default:
                             throw new IllegalArgumentException("Unknown format " + arg);
                     }
@@ -60,6 +71,27 @@ public class Application {
             if (!streamMode && pathCount != 2) {
                 throw new IllegalArgumentException("Must supply source and destination path (or enable stream mode).");
             }
+            if (streamMode && format == null && pathCount < 2) {
+                throw new IllegalArgumentException("Must specify a format in stream mode with no output file");
+            }
+            computeFormat();
+        }
+
+        private void computeFormat() {
+            if (format == null) {
+                String fileExtension = getFileExtension(destination).toUpperCase();
+
+                // Deduce format from extension
+                try {
+                    format = DestinationFormat.fromExtension(fileExtension);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Unable to output JSON to file extension " + fileExtension, e);
+                }
+            }
+        }
+
+        public boolean isShowHelp() {
+            return showHelp;
         }
 
         public boolean isStreamMode() {
@@ -80,13 +112,24 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length <= 0) {
-            System.out.println("RemaTransactionParser [-f format] [-s] source destination");
-            return;
-        }
         ArgumentParser parser = new ArgumentParser();
         parser.parse(args);
 
+        if (parser.isShowHelp()) {
+            System.out.println("RemaTransactionParser [-f format] [-s] [-h] source destination");
+            System.out.println(" -f format     Specify the output format, either XLSX (Excel 2003) or SQL ");
+            System.out.println("                (Database Export script for SQLite). If not specified, the");
+            System.out.println("                output file extension will be used instead.");
+            System.out.println(" -s            Enable stream mode, allowing the program to use standard");
+            System.out.println("                output or standard input instead of the file system. Format must");
+            System.out.println("                be specified if no output file is specified.");
+            System.out.println(" -h            Show this help text.");
+            System.out.println(" source        Path to the JSON-file with the exported Rema 1000 data.");
+            System.out.println("                May be omitted in stream mode.");
+            System.out.println(" destination   Path to the output XLSX- or SQL-file where the conversion");
+            System.out.println("                output will be written. May be omitted in stream mode.");
+            return;
+        }
         Gson gson = new Gson();
 
         try (BufferedReader reader = getInput(parser)) {
@@ -97,7 +140,7 @@ public class Application {
             }
         }
         if (!parser.isStreamMode()) {
-            System.out.println("Data converted.");
+            System.out.println("Data converted to " + parser.getFormat());
         }
     }
 
@@ -123,20 +166,15 @@ public class Application {
     }
 
     private static OutputStream getOutput(ArgumentParser parser) throws IOException {
-        String extension = parser.getFormat().getExtension();
         Path outputFile = parser.getDestination();
 
-        if (extension != null && outputFile != null) {
-            String fileName = outputFile.getFileName().toString();
-            int dotIndex = fileName.lastIndexOf('.');
-            String fileExtension = dotIndex != -1 ? fileName.substring(dotIndex + 1) : "";
-
-            // Error
-            if (!extension.equalsIgnoreCase(fileExtension)) {
-                throw new IllegalArgumentException("Extension must be " + extension);
-            }
-        }
         return parser.getDestination() != null ? Files.newOutputStream(outputFile) : System.out;
+    }
+
+    private static String getFileExtension(Path outputFile) {
+        String fileName = outputFile.getFileName().toString();
+        int dotIndex = fileName.lastIndexOf('.');
+        return dotIndex != -1 ? fileName.substring(dotIndex + 1) : "";
     }
 
     private static void writeOutput(DestinationFormat format, OutputStream output, DataRoot dataRoot) throws IOException {

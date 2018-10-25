@@ -11,6 +11,10 @@ public enum DestinationFormat {
         this.extension = extension;
     }
 
+    public static DestinationFormat fromExtension(String extension) {
+        return valueOf(extension.toUpperCase());
+    }
+
     public String getExtension() {
         return extension;
     }
