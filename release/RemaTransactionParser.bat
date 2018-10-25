@@ -1,2 +1,2 @@
 @echo off
-java -jar RemaTransactionParser.jar %*
+java -jar %~dp0\RemaTransactionParser.jar %*
