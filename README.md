@@ -13,7 +13,7 @@ To request this data, open the "Æ" app, then click the "profile" button to the 
 Rema 100 will also send a password by SMS to the same phone number during login in the "Æ" app. This password must be used to decompress the ZIP-file, and extract the containing JSON-file.
 
 ## Install
-Before running RemaTransactionParser, first ensure that you have Java 8 or later installed on your system (check by running _java --version_). Download the latest version of Java either from java.com, adoptopenjdk.net or using the package manager of your operating system (if any).
+Before running RemaTransactionParser, first ensure that you have Java 8 or later installed on your system (check by running _java --version_). Download the latest version of Java either from [java.com](https://java.com/), [adoptopenjdk.net](https://adoptopenjdk.net/) or using the package manager of your operating system (if any).
 
 To install RemaTransactionParser, download the [latest release](https://github.com/aadnk/RemaTransactionParser/releases) from "Releases", and simply extract (or build - see below) RemaTransactionParser to a folder. Optionally, you may add this folder to your PATH variable in Windows. Otherwise, always specify RemaTransactionParser by its full file path, or navigate to the folder (_cd_) in the command line.
 
