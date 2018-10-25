@@ -15,7 +15,7 @@ Rema 100 will also send a password by SMS to the same phone number during login 
 ## Install
 Before running RemaTransactionParser, first ensure that you have Java 8 or later installed on your system (check by running _java --version_). Download the latest version of Java either from java.com, adoptopenjdk.net or using the package manager of your operating system (if any).
 
-To install RemaTransactionParser, download the latest release from "Releases", and simply extract (or build - see below) RemaTransactionParser to a folder. Optionally, you may add this folder to your PATH variable. Otherwise, always specify RemaTransactionParser by its full file path, or navigate to the folder (_cd_) in the command line.
+To install RemaTransactionParser, download the [latest release](https://github.com/aadnk/RemaTransactionParser/releases) from "Releases", and simply extract (or build - see below) RemaTransactionParser to a folder. Optionally, you may add this folder to your PATH variable. Otherwise, always specify RemaTransactionParser by its full file path, or navigate to the folder (_cd_) in the command line.
 
 ## Running
 Executing the following command in the command line will convert the JSON-file to an Excel/SQL file. Substitute _source-json_ and _destination-file_ with the corresponding correct file paths:
