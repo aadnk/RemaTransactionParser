@@ -132,7 +132,7 @@ public class Application {
         parser.parse(args);
 
         if (parser.isShowHelp()) {
-            System.out.println("RemaTransactionParser [-f format] [-s] [-h] source destination");
+            System.out.println("RemaTransactionParser -f format] [-s] [-h] source destination");
             System.out.println(" -f format     Specify the output format, either XLSX (Excel 2003) or SQL ");
             System.out.println("                (Database Export script for SQLite). If not specified, the");
             System.out.println("                output file extension will be used instead.");
@@ -144,6 +144,7 @@ public class Application {
             System.out.println("                May be omitted in stream mode.");
             System.out.println(" destination   Path to the output XLSX- or SQL-file where the conversion");
             System.out.println("                output will be written. May be omitted in stream mode.");
+            System.out.println("Version: " + Application.class.getPackage().getImplementationVersion());
             return;
         }
         Gson gson = new Gson();
