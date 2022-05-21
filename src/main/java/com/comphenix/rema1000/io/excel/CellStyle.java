@@ -20,6 +20,9 @@ import org.dhatim.fastexcel.Worksheet;
 
 import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @FunctionalInterface
 public interface CellStyle {
@@ -40,12 +43,22 @@ public interface CellStyle {
      * @param style the style.
      */
     public static void writeStyled(Worksheet worksheet, int row, int column, Object value, CellStyle style) {
-        if (value instanceof Instant) {
+        if (value instanceof LocalDate) {
+            worksheet.value(row, column, (LocalDate) value);
+        } else if (value instanceof LocalDateTime) {
+            worksheet.value(row, column, (LocalDateTime) value);
+        } else if (value instanceof ZonedDateTime) {
+            worksheet.value(row, column, (ZonedDateTime) value);
+        } else if (value instanceof Instant) {
             worksheet.value(row, column, Date.from((Instant) value));
+        } else if (value instanceof Date) {
+            worksheet.value(row, column, (Date) value);
         } else if (value instanceof Boolean) {
             worksheet.value(row, column, (Boolean)value ? "True" : "False");
+        } else if (value instanceof Number) {
+            worksheet.value(row, column, (Number) value);
         } else {
-            worksheet.value(row, column, value);
+            worksheet.value(row, column, value != null ? value.toString() : null);
         }
 
         if (style != null) {
